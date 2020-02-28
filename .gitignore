@@ -1,0 +1,7 @@
+## Artifacts
+*egg-info*
+*pytest_cache*
+*pycache*
+
+## Credentials
+config.json
