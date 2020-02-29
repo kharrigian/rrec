@@ -7,13 +7,21 @@ REQUEST_LIMIT = 100000
 
 ## Standard Libary
 import os
+import sys
 import json
 import datetime
+import requests
+from time import sleep
+from collections import Counter
 
 ## External Libaries
 import pandas as pd
+from tqdm import tqdm
 from praw import Reddit
 from psaw import PushshiftAPI
+
+## Local
+from ..util.helpers import chunks
 
 #####################
 ### Wrapper
@@ -569,7 +577,113 @@ class RedditData(object):
             df = df.sort_values("created_utc", ascending=True)
             df = df.reset_index(drop=True)
         return df
+    
+    def identify_active_subreddits(self,
+                                   start_date=None,
+                                   end_date=None,
+                                   search_freq=5):
+        """
+        Identify active subreddits based on submission histories
+
+        Args:
+            start_date (str, isoformat): Start date of activity
+            end_date (str, isoformat): End data of activity
+            search_freq (int): Minutes to consider per request. Lower frequency 
+                               means better coverage but longer query time.
         
+        Returns:
+            subreddit_count (pandas Series): Subreddit, Submission Count in Time Period
+        """
+        ## Get Start/End Epochs
+        start_epoch = self._get_start_date(start_date)
+        end_epoch = self._get_end_date(end_date)
+        ## Create Search Range
+        date_range = [start_epoch]
+        while date_range[-1] < end_epoch:
+            date_range.append(date_range[-1] + search_freq*60)
+        ## Query Subreddits
+        endpoint = "https://api.pushshift.io/reddit/search/submission/"
+        subreddit_count = Counter()
+        backoff = self.api.backoff
+        for start, stop in tqdm(zip(date_range[:-1], date_range[1:]), total = len(date_range)-1, file=sys.stdout):
+            ## Make Get Request
+            req = f"{endpoint}?after={start}&before={stop}&filter=subreddit&size=1000"
+            resp = requests.get(req)
+            ## Parse Request
+            if resp.status_code == 200:
+                data = resp.json()["data"]
+                sub_count = Counter([i["subreddit"] for i in data])
+                subreddit_count = subreddit_count + sub_count
+                sleep(backoff)
+                backoff = self.api.backoff
+            else: ## Sleep with exponential backoff
+                backoff = backoff * 2
+                sleep(backoff)
+        ## Format
+        subreddit_count = pd.Series(subreddit_count).sort_values(ascending=False)
+        ## Drop User-Subreddits
+        subreddit_count = subreddit_count.loc[subreddit_count.index.map(lambda i: not i.startswith("u_"))]
+        return subreddit_count
+
+    def retrieve_subreddit_user_history(self,
+                                        subreddit,
+                                        start_date=None,
+                                        end_date=None,
+                                        history_type="comment",
+                                        docs_per_chunk=5000):
+        """
+        Args:
+            subreddit (str): Subreddit of interest
+            start_date (str, isoformat or None): Start date or None for querying posts
+            end_date (str, isoformat or None): End date or None for querying posts
+            history_type (str): "comment" or "submission": Type of post to get author counts for
+        
+        Returns:
+            authors (Series): Author post counts in subreddit. Ignores deleted authors
+                              and attempts to filter out bots
+        """
+        ## Get Start/End Epochs
+        start_epoch = self._get_start_date(start_date)
+        end_epoch = self._get_end_date(end_date)
+        ## Endpoint
+        if history_type == "comment":
+            endpoint = self.api.search_comments
+        elif history_type == "submission":
+            endpoint = self.api.search_submissions
+        else:
+            raise ValueError("history_type parameter must be either comment or submission")
+        ## Identify Number of Documents
+        docs = endpoint(subreddit=subreddit,
+                        after=start_epoch,
+                        before=end_epoch,
+                        size=0,
+                        aggs="subreddit",
+                        filter=["id"])
+        doc_count = next(docs)["subreddit"]
+        if len(doc_count) == 0:
+            return None
+        doc_count = doc_count[0]["doc_count"]
+        ## Create Uniform Time Chunks
+        n_chunks = doc_count // docs_per_chunk + 1
+        chunksize = (end_epoch-start_epoch) / n_chunks
+        date_range = [start_epoch]
+        while date_range[-1] < end_epoch:
+            date_range.append(date_range[-1]+chunksize)
+        date_range = list(map(int, date_range))
+        ## Query Authors
+        authors = Counter()
+        for start, stop in tqdm(zip(date_range[:-1], date_range[1:]), total=n_chunks, file=sys.stdout):
+            req = endpoint(subreddit=subreddit,
+                           after=start,
+                           before=stop,
+                           filter="author")
+            resp = [a.author for a in req]
+            resp = list(filter(lambda i: i != "[deleted]" and i != "[removed]" and not i.lower().endswith("bot"), resp))
+            authors += Counter(resp)
+        ## Format
+        authors = pd.Series(authors).sort_values(ascending=False)
+        return authors
+
     def convert_utc_epoch_to_datetime(self,
                                       epoch):
         """
