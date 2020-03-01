@@ -2,6 +2,7 @@
 *egg-info*
 *pytest_cache*
 *pycache*
+*workspace*
 
 ## Credentials
 config.json
