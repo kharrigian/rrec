@@ -167,7 +167,7 @@ def main():
     ## Retrieve Active Subreddits
     active_subreddits_file = f"{main_cache_dir}active_subreddits.csv"
     if os.path.exists(active_subreddits_file) and not OVERWRITE_SEARCH:
-        active_subreddits = pd.read_csv(active_subreddits_file, low_memory=True)
+        active_subreddits = pd.read_csv(active_subreddits_file, low_memory=True, index_col=0)["0"]
     else:
         active_subreddits = get_active_subreddits()
         active_subreddits.to_csv(active_subreddits_file)
