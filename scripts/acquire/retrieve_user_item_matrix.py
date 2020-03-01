@@ -23,6 +23,7 @@ from glob import glob
 
 ## External
 import joblib
+import pandas as pd
 from scipy.sparse import vstack
 from sklearn.feature_extraction import DictVectorizer
 
