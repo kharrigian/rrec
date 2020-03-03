@@ -561,7 +561,7 @@ class RedditData(object):
                 backoff = 2 ** backoff
 
     def search_for_submissions(self,
-                               query,
+                               query=None,
                                subreddit=None,
                                start_date=None,
                                end_date=None,
@@ -589,11 +589,12 @@ class RedditData(object):
         end_epoch = self._get_end_date(end_date)
         ## Construct Query
         query_params = {
-            "title":'"{}"'.format(query),
             "before":end_epoch,
             "after":start_epoch,
             "limit":limit
         }
+        if query is not None:
+            query_params["title"] = '"{}"'.format(query)
         if subreddit is not None:
             query_params["subreddit"] = subreddit
         ## Make Query Attempt
@@ -614,7 +615,7 @@ class RedditData(object):
                 backoff = 2 ** backoff
     
     def search_for_comments(self,
-                            query,
+                            query=None,
                             subreddit=None,
                             start_date=None,
                             end_date=None,
@@ -642,13 +643,14 @@ class RedditData(object):
         end_epoch = self._get_end_date(end_date)
         ## Construct Query
         query_params = {
-            "q":query,
             "before":end_epoch,
             "after":start_epoch,
             "limit":limit
         }
         if subreddit is not None:
             query_params["subreddit"] = subreddit
+        if query is not None:
+            query_params["q"] = query
         ## Make Query Attempt
         backoff = self._backoff
         for _ in range(self._max_retries):
