@@ -117,6 +117,8 @@ class CollaborativeFiltering(object):
 
     def recommend(self,
                   user_history,
+                  filter_liked=False,
+                  filter_items=[],
                   k_top=10):
         """
         Args:
@@ -131,13 +133,13 @@ class CollaborativeFiltering(object):
             if item not in self._item_map:
                 continue
             user_vector[self._item_map[item]] = count
-        A, b = self._user_linear_equation(user_vector)
-        user_factor = np.linalg.solve(A, b)
         ## Compute Score
-        scores = self.model.item_factors.dot(user_factor)
-        ## Select Top-k
-        best = np.argpartition(scores, -k_top)[-k_top:]
-        scores = sorted(zip(best, scores[best]), key=lambda x: -x[1])
+        scores = self.model.recommend(userid=0,
+                                      user_items=csr_matrix(user_vector),
+                                      N=k_top,
+                                      filter_already_liked_items=filter_liked,
+                                      filter_items=list(map(lambda f: self._item_map[f], filter_items)),
+                                      recalculate_user=True)
         ## Replace Indices with Names
         rec_items = list(map(lambda i: [self._items[i[0]],i[1]], scores))
         rec_items = pd.DataFrame(rec_items, columns = ["item","score"])
