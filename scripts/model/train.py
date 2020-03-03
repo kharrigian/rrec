@@ -10,9 +10,15 @@ DATA_FILE = "./data/raw/user_item/2020-02-21_2020-02-28/comment_user_item_matrix
 MODEL_DIR = "./models/"
 MODEL_NAME = "comments_20200221_20200228.cf"
 
-## Parameters
+## Data Parameters
 MIN_SUPPORT = 25
 BM25_WEIGHTING = False
+
+## Model Parameters
+N_FACTORS = 100
+ITERATIONS = 25
+REGULARIZATION = 10
+NUM_THREADS = 8
 
 #####################
 ### Imports
@@ -45,12 +51,17 @@ X_masked = X[mask]
 rows_masked = [rows[i] for i in mask]
 
 ## Weight Using BM25
-if BM25_WEIGHTING
+if BM25_WEIGHTING:
     X_masked = bm25_weight(X_masked).tocsr()
 
 ## Fit Model
-cf = CollaborativeFiltering(iterations=5, num_threads=4)
-cf = cf.fit(X_masked, rows=rows_masked, columns=columns)
+cf = CollaborativeFiltering(factors=N_FACTORS,
+                            regularization=REGULARIZATION,
+                            iterations=ITERATIONS,
+                            num_threads=NUM_THREADS)
+cf = cf.fit(X_masked,
+            rows=rows_masked,
+            columns=columns)
 
 #####################
 ### Testing
