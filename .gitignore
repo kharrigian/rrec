@@ -6,3 +6,9 @@
 
 ## Credentials
 config.json
+
+## Data
+data/raw/user_item/
+data/*.tar.gz
+data/*.joblib
+models/*.cf
