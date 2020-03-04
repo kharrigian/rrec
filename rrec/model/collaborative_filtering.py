@@ -101,23 +101,6 @@ class CollaborativeFiltering(object):
         sim_items = pd.DataFrame(sim_items, columns = ["item","similarity"])
         return sim_items
 
-    def _user_linear_equation(self,
-                              user_vector):
-        """
-
-        """
-        A = self.model.YtY + self.model.regularization * np.eye(self.model.factors)
-        b = np.zeros(self.model.factors)
-        nonzeros = np.nonzero(user_vector)[0]
-        for i, confidence in zip(nonzeros, user_vector[nonzeros]):
-            factor = self.model.item_factors[i]
-            if confidence > 0:
-                b += confidence * factor
-            else:
-                confidence *= -1
-            A += (confidence - 1) * np.outer(factor, factor)
-        return A, b
-
     def recommend(self,
                   user_history,
                   filter_liked=False,
