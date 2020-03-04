@@ -60,6 +60,8 @@ class CollaborativeFiltering(object):
             rows (list): Identifiers for the rows
             columns (list): Identifiers for the columns
         """
+        ## Fix Random Seed
+        np.random.seed(self._random_state)
         ## Cache Data
         self._item_user_matrix = X
         ## Indices
