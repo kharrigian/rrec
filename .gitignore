@@ -9,6 +9,7 @@ config.json
 
 ## Data
 data/raw/user_item/
+data/raw/language/
 data/*.tar.gz
 data/*.joblib
 models/*.cf
