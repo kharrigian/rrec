@@ -22,6 +22,11 @@ REGULARIZATION = 0.01
 NUM_THREADS = 8
 RANDOM_STATE = 42
 
+## EVALUATION
+TRAIN_USER_SAMPLE_SIZE = 0.8
+TEST_USER_SAMPLE_SIZE = 5000
+TEST_HISTORY_SAMPLE_SIZE = 0.5
+
 ## Outputs
 PLOT_DIR = "./plots/"
 
@@ -132,7 +137,7 @@ def roc_auc_plot(results):
 ## Plotting and Model Directories
 if not os.path.exists(PLOT_DIR):
     os.makedirs(PLOT_DIR)
-if not os.path.exits(MODEL_DIR):
+if not os.path.exists(MODEL_DIR):
     os.makedirs(MODEL_DIR)
 
 ## Load Data
@@ -147,10 +152,6 @@ columns = data["columns"]
 ### Model Evaluation
 #####################
 
-## Configuration
-TEST_USER_SAMPLE_SIZE = 0.2
-TEST_HISTORY_SAMPLE_SIZE = 0.5
-
 ## Filter Users
 user_mask = np.nonzero((X>0).sum(axis=0) >= MIN_HISTORY)[1]
 X_masked = X[:, user_mask]
@@ -158,7 +159,7 @@ columns_masked = [columns[i] for i in user_mask]
 
 ## User Sample Selection
 np.random.seed(RANDOM_STATE)
-train_users, test_users = train_test_split(list(range(X_masked.shape[1])), test_size=TEST_USER_SAMPLE_SIZE)
+train_users, test_users = train_test_split(list(range(X_masked.shape[1])), test_size=1-TRAIN_USER_SAMPLE_SIZE)
 train_users = sorted(train_users)
 test_users = sorted(test_users)
 X_train = X_masked[:, train_users]
@@ -184,8 +185,8 @@ cf = cf.fit(X_train_masked,
             columns=[columns_masked[i] for i in train_users])
 
 ## Get Results
-train_results = score_model(cf, X_train_masked, rows_masked, TEST_HISTORY_SAMPLE_SIZE, 1000)
-test_results = score_model(cf, X_test, rows, TEST_HISTORY_SAMPLE_SIZE, 1000)
+train_results = score_model(cf, X_train_masked, rows_masked, TEST_HISTORY_SAMPLE_SIZE, TEST_USER_SAMPLE_SIZE)
+test_results = score_model(cf, X_test, rows, TEST_HISTORY_SAMPLE_SIZE, TEST_USER_SAMPLE_SIZE)
 
 ## Plot Performance
 for user_group, group_results in zip(["train","test"],[train_results, test_results]):
