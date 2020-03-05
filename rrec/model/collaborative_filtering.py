@@ -62,8 +62,6 @@ class CollaborativeFiltering(object):
         """
         ## Fix Random Seed
         np.random.seed(self._random_state)
-        ## Cache Data
-        self._item_user_matrix = X
         ## Indices
         if rows is None:
             rows = list(range(X.shape[0]))
