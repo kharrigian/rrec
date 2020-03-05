@@ -6,7 +6,7 @@
 ###########################
 
 ## Language Data Directory
-LANGUAGE_DIR = "./data/raw/language/2020-02-21_2020-02-28/comments/"
+LANGUAGE_DIR = "./data/raw/language/2019-07-01_2020-03-01/comments/"
 
 ## Processed Data
 PROCESSED_DATA_DIR = "./data/processed/"
@@ -102,7 +102,7 @@ def infer_readability(text):
     return measures
 
 def get_statistics(language_data,
-                   min_threshold=10):
+                   min_threshold=5):
     """
 
     """
@@ -173,6 +173,7 @@ def get_language_distribution(language_summary):
 
 def main():
     """
+
     """
     ## Identify Language Samples
     data_files = glob(f"{LANGUAGE_DIR}*.json")
@@ -187,7 +188,7 @@ def main():
     language_summary = pd.DataFrame(language_summary).T
     language_summary = language_summary.dropna()
     ## Language Distribution
-    language_dist, language_dist = get_language_distribution(language_summary)
+    language_dist, language_conc = get_language_distribution(language_summary)
     ## Cache Language Summary
     if not os.path.exists(PROCESSED_DATA_DIR):
         os.makedirs(PROCESSED_DATA_DIR)
