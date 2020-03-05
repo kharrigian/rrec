@@ -4,13 +4,12 @@
 ######################
 
 ## Start and End Date for Querying Date
-START_DATE = "2020-02-21"
-END_DATE = "2020-02-28"
+START_DATE = "2019-07-01"
+END_DATE = "2020-03-01"
 
 ## Parameters
 MIN_ACTIVITY = 20
-MIN_SAMPLE_SIZE = 10
-SAMPLE_SIZE = 0.1
+SAMPLE_SIZE = 5000
 
 ## Path to Subreddits List (None if it doesn't exist already)
 SUBREDDIT_LIST = "./data/raw/user_item/2020-02-21_2020-02-28/active_subreddits.csv"
@@ -111,13 +110,11 @@ def retrieve_language_samples(active_subreddits,
     """
     ## Subreddits Meeting Criteria
     subreddits = active_subreddits[active_subreddits >= MIN_ACTIVITY]
-    ## Sample Size
-    subreddits_sample_size = (subreddits * SAMPLE_SIZE).astype(int).map(lambda i: max(i, MIN_SAMPLE_SIZE))
     ## Initialize Reddit
     reddit = RedditData(False)
     ## Retreve Samples for Each Subreddit
-    for subreddit, sample in tqdm(subreddits_sample_size.iteritems(),
-                                  total=len(subreddits_sample_size),
+    for subreddit, sample in tqdm(subreddits.iteritems(),
+                                  total=len(subreddits),
                                   file=sys.stdout):
         ## Sample File
         sample_file = f"{cache_dir}{subreddit}.json"
@@ -134,7 +131,7 @@ def retrieve_language_samples(active_subreddits,
                       subreddit=subreddit,
                       start_date=START_DATE, 
                       end_date=END_DATE,
-                      limit=sample)
+                      limit=SAMPLE_SIZE)
         ## Extract Text Samples
         text_samples = dict()
         if len(df) > 0 and sample_type == "comment":
