@@ -338,7 +338,75 @@ class RedditData(object):
         if len(commentsList) > 0:
             comment_df = self._parse_psaw_comment_request(commentsList)
             return comment_df
+    
+    def _parse_metadata(self,
+                        metadata):
+        """
 
+        """
+        metadata_columns = ["display_name",
+                            "restrict_posting",
+                            "wiki_enabled",
+                            "title",
+                            "primary_color",
+                            "active_user_count",
+                            "display_name_prefixed",
+                            "accounts_active",
+                            "public_traffic",
+                            "subscribers",
+                            "name",
+                            "quarantine",
+                            "hide_ads",
+                            "emojis_enabled",
+                            "advertiser_category",
+                            "public_description",
+                            "spoilers_enabled",
+                            "all_original_content",
+                            "key_color",
+                            "created",
+                            "submission_type",
+                            "allow_videogifs",
+                            "allow_polls",
+                            "collapse_deleted_comments",
+                            "allow_discovery",
+                            "link_flair_enabled",
+                            "subreddit_type",
+                            "suggested_comment_sort",
+                            "id",
+                            "over18",
+                            "description",
+                            "restrict_commenting",
+                            "allow_images",
+                            "lang",
+                            "whitelist_status",
+                            "url",
+                            "created_utc"]
+        metadata = dict((c, metadata[c]) for c in metadata_columns)
+        return metadata
+                          
+    def retrieve_subreddit_metadata(self,
+                                    subreddit):
+        """
+
+        """
+        ## Validate Configuration
+        if not self._init_praw:
+            raise ValueError("Must have initialized class with PRAW to access subreddit metadata")
+        ## Load Object and Fetch Metadata
+        backoff = self._backoff
+        for _ in range(self._max_retries):
+            try:
+                sub = self._praw.subreddit(subreddit)
+                sub._fetch()
+                ## Parse
+                metadata = vars(sub)
+                metadata_clean = self._parse_metadata(metadata)
+                return metadata_clean
+            except Exception as e:
+                LOGGER.info(e)
+                sleep(backoff)
+                backoff = 2 ** backoff
+    
     def retrieve_subreddit_submissions(self,
                                        subreddit,
                                        start_date=None,
