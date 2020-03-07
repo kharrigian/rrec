@@ -34,9 +34,11 @@ from langid import classify
 import readability
 from scipy.sparse import vstack
 from sklearn.feature_extraction import DictVectorizer
+import matplotlib.pyplot as plt
 
 ## Local
 from rrec.util.helpers import flatten
+from rrec.model.reddit_recommender import get_language_name
 
 ###########################
 ### Globals
@@ -171,6 +173,68 @@ def get_language_distribution(language_summary):
     language_conc = language_dist.apply(lambda row: row / sum(row), axis = 1)
     return language_dist, language_conc
 
+def _plot_overall_language_distribution(language_dist):
+    """
+
+    """
+    ## Count
+    language_counts = language_dist.sum(axis=0).sort_values(ascending=False)
+    ## Re-label
+    language_counts.index = language_counts.index.map(get_language_name)
+    ## Organize Data of Top-k Languages
+    highlights = language_counts.head(20).append(language_counts.tail(5))
+    highlights = highlights[::-1]
+    ind = list(range(26))
+    ind_names = highlights.index[:5].tolist() + ["..."] + highlights.index[5:].tolist()
+    values = highlights.tolist()[:5] + [0] + highlights.tolist()[5:]
+    ## Create Figure
+    fig, ax = plt.subplots(figsize=(10,5.8))
+    ax.barh(ind,
+            values,
+            color="C0",
+            alpha=.75)
+    ax.set_yticks(ind)
+    ax.set_yticklabels(ind_names)
+    ax.set_xscale("symlog")
+    ax.set_xlabel("Number of Comments in Sample")
+    ax.set_ylim(-1, 26)
+    fig.tight_layout()
+    plt.savefig("./plots/language_distribution.png")
+    plt.close()
+
+def _plot_top_concentrations(language_dist,
+                             language_conc,
+                             min_support=100):
+    """
+
+    """
+    ## Filter
+    language_conc = language_conc.loc[language_dist.sum(axis=1)>=min_support]
+    ## Create Plot Directory
+    conc_dir = "./plots/concentration_by_language/"
+    if not os.path.exists(conc_dir):
+        os.makedirs(conc_dir)
+    ## Plot Top for Each Language
+    for language in language_conc.columns:
+        language_top = language_conc[language].sort_values(ascending=True).tail(20) * 100
+        language_name = get_language_name(language)
+        fig, ax = plt.subplots(figsize=(10,5.8))
+        language_top.plot.barh(ax=ax, color = "C0", alpha=.75)
+        ax.set_xlabel("Percentage of Subreddit Comments")
+        ax.set_title(f"Subreddits With Highest Concentration of {language_name} ({language})", loc="left")
+        fig.tight_layout()
+        fig.savefig(f"{conc_dir}{language}.png")
+        plt.close()
+
+def create_summary_plots(language_dist,
+                         language_conc,
+                         language_summary):
+    """
+
+    """
+    _ = _plot_overall_language_distribution(language_dist)
+    _ = _plot_top_concentrations(language_dist, language_conc, 100)
+
 def main():
     """
 
@@ -194,6 +258,8 @@ def main():
         os.makedirs(PROCESSED_DATA_DIR)
     language_summary.drop(["language_distribution"],axis=1).to_csv(f"{PROCESSED_DATA_DIR}subreddit_language_attributes.csv")
     language_dist.astype(int).to_csv(f"{PROCESSED_DATA_DIR}subreddit_language_distribution.csv")
+    ## Create Summary Plots
+    _ = create_summary_plots(language_dist, language_conc, language_summary)
 
 ###########################
 ### Execution
