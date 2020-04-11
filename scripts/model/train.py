@@ -13,7 +13,6 @@ MODEL_NAME = "comments_20200221_20200228.cf"
 ## Data Parameters
 MIN_SUPPORT = 25
 MIN_HISTORY = 5
-BM25_WEIGHTING = False
 
 ## Model Parameters
 N_FACTORS = 250
@@ -43,7 +42,6 @@ import numpy as np
 import pandas as pd
 from sklearn import metrics
 import matplotlib.pyplot as plt
-from implicit.nearest_neighbours import bm25_weight
 from sklearn.model_selection import train_test_split
 
 ## Local
@@ -170,10 +168,6 @@ train_mask = np.nonzero((X_train>0).sum(axis=1) >= MIN_SUPPORT)[0]
 X_train_masked = X_train[train_mask]
 rows_masked = [rows[i] for i in train_mask]
 
-## Weight Using BM25
-if BM25_WEIGHTING:
-    X_train_masked = bm25_weight(X_train_masked).tocsr()
-
 ## Fit Model
 cf = CollaborativeFiltering(factors=N_FACTORS,
                             regularization=REGULARIZATION,
@@ -212,10 +206,6 @@ columns_masked = [columns[i] for i in user_mask]
 subreddit_mask = np.nonzero((X_masked>0).sum(axis=1) >= MIN_SUPPORT)[0]
 X_masked = X_masked[subreddit_mask]
 rows_masked = [rows[i] for i in subreddit_mask]
-
-## Weight Using BM25
-if BM25_WEIGHTING:
-    X_masked = bm25_weight(X_masked).tocsr()
 
 ## Fit Model
 cf = CollaborativeFiltering(factors=N_FACTORS,
