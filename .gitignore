@@ -17,3 +17,6 @@ data/raw/covid/
 data/raw/metadata/temp/
 data/raw/metadata/subreddit_metadata.csv
 data/db/*.db
+data/processed/hyperparameter_search_results.csv
+
+plots/grid_search_*
