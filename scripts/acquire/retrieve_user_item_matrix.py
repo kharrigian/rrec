@@ -83,7 +83,7 @@ def create_dict_vectorizer(vocab):
     _count2vec.feature_names_ = [rev_dict[i] for i in range(len(rev_dict))]
     return _count2vec
 
-def get_active_subreddits(search_freq=5):
+def get_active_subreddits(search_freq="5m"):
     """
 
     """
@@ -93,7 +93,7 @@ def get_active_subreddits(search_freq=5):
     logger.info("Retrieving Active Subreddits")
     active_subreddits = reddit.identify_active_subreddits(START_DATE,
                                                           END_DATE,
-                                                          search_freq=search_freq)
+                                                          chunksize=search_freq)
     return active_subreddits
 
 def get_user_item_matrix(active_subreddits,
@@ -116,7 +116,7 @@ def get_user_item_matrix(active_subreddits,
                                                                      start_date=START_DATE,
                                                                      end_date=END_DATE,
                                                                      history_type=history_type,
-                                                                     docs_per_chunk=5000)
+                                                                     chunksize=None)
         with gzip.open(subreddit_file, "wt") as the_file:
             if author_post_history is not None:
                 json.dump(author_post_history.to_dict(), the_file)

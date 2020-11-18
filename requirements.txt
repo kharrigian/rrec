@@ -12,3 +12,4 @@ scikit-learn==0.22.2
 joblib==0.14.1
 readability==0.3.1
 langid==1.1.6
+retriever @ git+ssh://git@github.com/kharrigian/retriever@main#egg=retriever

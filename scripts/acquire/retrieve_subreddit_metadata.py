@@ -43,7 +43,7 @@ logger = initialize_logger()
 ### Functions
 ######################
 
-def get_active_subreddits(search_freq=5):
+def get_active_subreddits(search_freq="5m"):
     """
 
     """
@@ -53,7 +53,7 @@ def get_active_subreddits(search_freq=5):
     logger.info("Retrieving Active Subreddits")
     active_subreddits = reddit.identify_active_subreddits(START_DATE,
                                                           END_DATE,
-                                                          search_freq=search_freq)
+                                                          chunksize=search_freq)
     return active_subreddits
 
 def main():
